@@ -285,8 +285,6 @@ const LoginModal = ({ show, onClose }) => {
                                 </div>
                             </form>
                         )}
-
-                        {/* Aquí podrías agregar la vista para restablecer contraseña si quieres */}
                     </div>
                 </div>
             </div>
