@@ -2,29 +2,36 @@ import React from "react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import InternalNavbar from "../components/InternalNavbar";
-import apiClient from "../api/client";
+import { apiClient } from "../api/client";
 
 export default function Dashboard() {
+  // Estado para almacenar las estadísticas generales
   const [stats, setStats] = useState({
     voters: 0,
     politicians: 0,
     proposals: 0,
   });
 
+  // Estado para las últimas propuestas
   const [latestProposals, setLatestProposals] = useState([]);
+  // Estado para controlar la carga de datos
   const [loading, setLoading] = useState(true);
+  // Estado para capturar errores al obtener datos
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // Función asincrónica para obtener datos del dashboard y propuestas
     const fetchData = async () => {
       try {
-        setLoading(true);
+        setLoading(true); // Indicar que la carga ha iniciado
 
+        // Se hacen dos peticiones simultáneas con Promise.all
         const [dashboardRes, proposalsRes] = await Promise.all([
-          apiClient.get("/estadisticas/dashboard"),
-          apiClient.get("/propuesta/ultimas"),
+          apiClient.get("/estadisticas/dashboard"), // Estadísticas generales
+          apiClient.get("/propuesta/ultimas"), // Últimas propuestas
         ]);
 
+        // Si la respuesta del dashboard tiene datos, actualizamos el estado
         if (dashboardRes.data) {
           setStats({
             voters: dashboardRes.data.votantes || 0,
@@ -33,22 +40,26 @@ export default function Dashboard() {
           });
         }
 
+        // Si la respuesta de propuestas tiene datos, actualizamos el estado
         if (proposalsRes.data) {
           setLatestProposals(proposalsRes.data);
         }
       } catch (err) {
+        // Si hay un error que no sea aborto, guardamos el mensaje
         if (err.name !== "AbortError") {
           setError(err.message);
           console.error("Error fetching data:", err);
         }
       } finally {
-        setLoading(false);
+        setLoading(false); // Finaliza la carga
       }
     };
 
+    // Llamamos a la función para obtener datos cuando el componente se monta
     fetchData();
   }, []);
 
+  // Mostrar spinner mientras carga
   if (loading)
     return (
       <>
@@ -67,9 +78,11 @@ export default function Dashboard() {
       </>
     );
 
+  // Mostrar mensaje de error si ocurre uno
   if (error)
     return <div className="alert alert-danger my-5">Error: {error}</div>;
 
+  // Render principal del dashboard con estadísticas y tabla de propuestas
   return (
     <>
       <InternalNavbar />
@@ -157,8 +170,7 @@ export default function Dashboard() {
                         </small>
                       </td>
                       <td>
-                        {proposal.politico?.nombre}{" "}
-                        {proposal.politico?.apellido}
+                        {proposal.politico?.nombre} {proposal.politico?.apellido}
                       </td>
                       <td>
                         <span className="badge bg-secondary text-capitalize">

@@ -2,25 +2,26 @@ import React, { useState, useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import InternalNavbar from "../components/InternalNavbar";
-import apiClient from "../api/client";
-import { useAuth } from "../context/AuthContext";
+import {apiClient} from "../api/client"; import { useAuth } from "../context/AuthContext";
 
 const PropuestasList = () => {
-  const { user } = useAuth();
-  const [propuestas, setPropuestas] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterCategoria, setFilterCategoria] = useState("todos");
-  const [selectedPropuesta, setSelectedPropuesta] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [sortOption, setSortOption] = useState("votos_desc");
-  const [myVotes, setMyVotes] = useState("todas"); // "mis_votadas" o "todas"
-  const [myProposals, setMyProposals] = useState("todas"); // "mis_propuestas" o "todas"
-  const [likedProposals, setLikedProposals] = useState([]);
+  const { user } = useAuth(); // Obtiene el usuario autenticado desde el contexto
+  const [propuestas, setPropuestas] = useState([]); // Lista de propuestas obtenidas del backend
+  const [loading, setLoading] = useState(true); // Estado de carga
+  const [error, setError] = useState(null); // Estado de error
+  const [searchTerm, setSearchTerm] = useState(""); // Término de búsqueda
+  const [filterCategoria, setFilterCategoria] = useState("todos"); // Filtro por categoría
+  const [selectedPropuesta, setSelectedPropuesta] = useState(null); // Propuesta seleccionada para mostrar en modal
+  const [showModal, setShowModal] = useState(false); // Estado de visibilidad del modal
+  const [sortOption, setSortOption] = useState("votos_desc"); // Opción de ordenamiento
+  const [myVotes, setMyVotes] = useState("todas"); // Filtro de propuestas votadas por el usuario
+  const [myProposals, setMyProposals] = useState("todas"); // Filtro de propuestas creadas por el candidato
+  const [likedProposals, setLikedProposals] = useState([]); // IDs de propuestas que el usuario ha votado
 
-  // Verificar si la propuesta actual está marcada como "me gusta"
+  // Verifica si la propuesta seleccionada ya fue votada por el usuario
   likedProposals.includes(selectedPropuesta?._id);
+
+  // Maneja el voto (like/unlike) en una propuesta
   const handleLikePropuesta = async (propuestaId) => {
     if (!user) {
       alert("Debes iniciar sesión para votar");
@@ -31,12 +32,12 @@ const PropuestasList = () => {
       const isCurrentlyLiked = likedProposals.includes(propuestaId);
 
       if (isCurrentlyLiked) {
-        // Eliminar voto
+        // Si ya fue votada, se quita el voto
         await apiClient.patch(`/propuesta/${propuestaId}/unvote`, {
           id_votante: user.uid,
         });
 
-        // Actualizar estado local
+        // Actualiza el estado local eliminando el voto
         setLikedProposals(likedProposals.filter((id) => id !== propuestaId));
         setPropuestas(
           propuestas.map((p) => {
@@ -50,12 +51,12 @@ const PropuestasList = () => {
           })
         );
       } else {
-        // Agregar voto
+        // Si no ha sido votada, agrega el voto
         await apiClient.patch(`/propuesta/${propuestaId}/vote`, {
           id_votante: user.uid,
         });
 
-        // Actualizar estado local
+        // Actualiza el estado local agregando el voto
         setLikedProposals([...likedProposals, propuestaId]);
         setPropuestas(
           propuestas.map((p) => {
@@ -70,7 +71,7 @@ const PropuestasList = () => {
         );
       }
 
-      // Actualizar la propuesta seleccionada si es la misma
+      // Si la propuesta seleccionada es la misma, actualiza sus votos también
       if (selectedPropuesta?._id === propuestaId) {
         setSelectedPropuesta((prev) => ({
           ...prev,
@@ -84,17 +85,18 @@ const PropuestasList = () => {
       alert(`Error: ${error.response?.data?.message || error.message}`);
     }
   };
-  // Handler para cambios en filtro de votante
+
+  // Cambia el filtro de votos del usuario
   const handleMyVotesChange = (e) => {
     setMyVotes(e.target.value);
   };
 
-  // Handler para cambios en filtro de candidato
+  // Cambia el filtro de propuestas del candidato
   const handleMyProposalsChange = (e) => {
     setMyProposals(e.target.value);
   };
 
-  // Categorías válidas para el filtro
+  // Categorías posibles para filtrar propuestas
   const CATEGORIAS = [
     "Economía y Empleo",
     "Educación",
@@ -108,6 +110,7 @@ const PropuestasList = () => {
     "Relaciones Exteriores",
   ];
 
+  // Obtiene las propuestas desde el backend al montar el componente
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -115,7 +118,7 @@ const PropuestasList = () => {
         const response = await apiClient.get("/propuesta");
         setPropuestas(response.data);
 
-        // Obtener propuestas votadas por el usuario actual
+        // Si hay usuario, obtiene las propuestas que ya votó
         if (user?.uid) {
           const userVotedIds = response.data
             .filter((propuesta) =>
@@ -134,18 +137,19 @@ const PropuestasList = () => {
     fetchData();
   }, [user?.uid]);
 
-  // Abrir modal con los detalles de la propuesta
+  // Abre el modal con los detalles de una propuesta
   const handlePropuestaClick = (propuesta) => {
     setSelectedPropuesta(propuesta);
     setShowModal(true);
   };
 
-  // Cerrar modal
+  // Cierra el modal y limpia la propuesta seleccionada
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedPropuesta(null);
   };
 
+  // Elimina una propuesta si el usuario confirma
   const handleDeletePropuesta = async (propuestaId) => {
     if (!user) {
       alert("Debes iniciar sesión para realizar esta acción");
@@ -167,7 +171,7 @@ const PropuestasList = () => {
     }
   };
 
-  // Filtrar propuestas basado en búsqueda y filtro
+  // Aplica filtros a las propuestas (búsqueda, categoría, votos, propuestas del usuario)
   const filteredPropuestas = propuestas.filter((propuesta) => {
     const matchesSearch =
       propuesta.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -188,7 +192,6 @@ const PropuestasList = () => {
       myVotes === "todas" ||
       likedProposals.includes(propuesta._id);
 
-    // Filtro adicional para candidatos
     const matchesProposals =
       user?.tipo !== "candidato" ||
       myProposals === "todas" ||
@@ -199,6 +202,7 @@ const PropuestasList = () => {
     );
   });
 
+  // Ordena las propuestas filtradas según la opción seleccionada
   filteredPropuestas.sort((a, b) => {
     const filtered = filteredPropuestas.filter((propuesta) => {
       if (user?.tipo === "votante" && myVotes === "mis_votadas") {
@@ -235,266 +239,259 @@ const PropuestasList = () => {
     });
   });
 
-  if (loading)
-    return (
-      <>
-        <InternalNavbar />
-        <div className="container mt-5 text-center">
-          <div
-            className="spinner-border text-primary"
-            style={{ width: "2rem", height: "2rem" }}
-            role="status"
-          >
-            <span className="visually-hidden">Cargando...</span>
-          </div>
-          <h4 className="mt-3">Cargando propuestas...</h4>
-          <p>Esto puede tomar unos momentos</p>
-        </div>
-      </>
-    );
 
-  if (error)
-    return <div className="alert alert-danger my-5">Error: {error}</div>;
 
+// Mostrar spinner de carga mientras se están cargando los datos
+if (loading)
   return (
     <>
       <InternalNavbar />
-      <div className="container-fluid p-4">
-        <div className="card shadow-sm">
-          <div className="card-header bg-primary text-white">
-            <h3 className="mb-0">
-              <i className="bi bi-lightbulb-fill me-2"></i>
-              Lista de Propuestas
-            </h3>
-          </div>
+      <div className="container mt-5 text-center">
+        <div
+          className="spinner-border text-primary"
+          style={{ width: "2rem", height: "2rem" }}
+          role="status"
+        >
+          <span className="visually-hidden">Cargando...</span>
+        </div>
+        <h4 className="mt-3">Cargando propuestas...</h4>
+        <p>Esto puede tomar unos momentos</p>
+      </div>
+    </>
+  );
 
-          <div className="card-body">
-            {/* Controles de búsqueda y filtro */}
-            <div className="row mb-4">
-              <div className="col-md-3 mb-3 mb-md-0">
-                <div className="input-group">
-                  <span className="input-group-text">
-                    <i className="bi bi-search"></i>
-                  </span>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Buscar por título, descripción o político..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
+// Mostrar error si algo falla al cargar las propuestas
+if (error)
+  return <div className="alert alert-danger my-5">Error: {error}</div>;
+
+return (
+  <>
+    <InternalNavbar />
+    <div className="container-fluid p-4">
+      <div className="card shadow-sm">
+        {/* Encabezado del listado */}
+        <div className="card-header bg-primary text-white">
+          <h3 className="mb-0">
+            <i className="bi bi-lightbulb-fill me-2"></i>
+            Lista de Propuestas
+          </h3>
+        </div>
+
+        <div className="card-body">
+          {/* Controles de búsqueda y filtros */}
+          <div className="row mb-4">
+            {/* Filtro por texto */}
+            <div className="col-md-3 mb-3 mb-md-0">
+              <div className="input-group">
+                <span className="input-group-text">
+                  <i className="bi bi-search"></i>
+                </span>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Buscar por título, descripción o político..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
-
-              <div className="col-md-3 mb-3 mb-md-0">
-                <div className="input-group">
-                  <span className="input-group-text">
-                    <i className="bi bi-funnel-fill"></i>
-                  </span>
-                  <select
-                    className="form-select"
-                    value={filterCategoria}
-                    onChange={(e) => setFilterCategoria(e.target.value)}
-                  >
-                    <option value="todos">Todas las categorías</option>
-                    {CATEGORIAS.map((categoria) => (
-                      <option key={categoria} value={categoria}>
-                        {categoria}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="col-md-3 mb-3 mb-md-0">
-                <div className="input-group">
-                  <span className="input-group-text">
-                    <i className="bi bi-sort-down"></i>
-                  </span>
-                  <select
-                    className="form-select"
-                    value={sortOption}
-                    onChange={(e) => setSortOption(e.target.value)}
-                  >
-                    <option value="votos_desc">Más votadas</option>
-                    <option value="votos_asc">Menos votadas</option>
-                    <option value="fecha_desc">Más recientes</option>
-                    <option value="fecha_asc">Más antiguas</option>
-                  </select>
-                </div>
-              </div>
-
-              {(() => {
-                // Mostrar botón solo si tiene permisos
-                try {
-                  if (user.tipo === "votante") {
-                    return (
-                      <>
-                        <div className="col-md-3 mb-3 mb-md-0">
-                          <div className="input-group">
-                            <span className="input-group-text">
-                              <i className="bi bi-sort-down"></i>
-                            </span>
-                            <select
-                              className="form-select"
-                              value={myVotes}
-                              onChange={handleMyVotesChange}
-                            >
-                              <option value="todas">Todas</option>
-                              <option value="mis_votadas">Mis Votadas</option>
-                            </select>
-                          </div>
-                        </div>
-                      </>
-                    );
-                  }
-                  if (user.tipo === "candidato") {
-                    return (
-                      <>
-                        <div className="col-md-3 mb-3 mb-md-0">
-                          <div className="input-group">
-                            <span className="input-group-text">
-                              <i className="bi bi-sort-down"></i>
-                            </span>
-                            <select
-                              className="form-select"
-                              value={myProposals}
-                              onChange={handleMyProposalsChange}
-                            >
-                              <option value="todas">
-                                Todas las Propuestas
-                              </option>
-                              <option value="mis_propuestas">
-                                Mis Propuestas
-                              </option>
-                            </select>
-                          </div>
-                        </div>
-                      </>
-                    );
-                  }
-                } catch (e) {
-                  return null;
-                }
-              })()}
             </div>
 
-            {/* Tabla de resultados */}
-            <div className="table-responsive">
-              <table className="table table-hover align-middle">
-                <thead className="table-light">
-                  <tr>
-                    <th>Título</th>
-                    {/* <th>Descripción</th> */}
-                    <th>Categoría</th>
-                    <th>Político</th>
-                    <th>N Votos</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredPropuestas.length > 0 ? (
-                    filteredPropuestas.map((propuesta) => (
-                      <tr
-                        key={propuesta._id}
-                        onClick={() => handlePropuestaClick(propuesta)}
-                        style={{ cursor: "pointer" }}
-                        className="hover-row"
-                      >
-                        <td>
-                          <div className="fw-bold">
-                            {propuesta.titulo.length > 45
-                              ? propuesta.titulo.slice(0, 45) + "..."
-                              : propuesta.titulo}
-                          </div>
-                        </td>
-                        {/* <td>
-                          <div className="text-truncate" style={{maxWidth: "300px"}}>
-                            {propuesta.descripcion}
-                          </div>
-                        </td> */}
-                        <td>
-                          <span className="badge bg-info text-dark">
-                            {propuesta.categoria}
-                          </span>
-                        </td>
-                        <td>
-                          {propuesta.politico ? (
-                            <div className="d-flex align-items-center">
-                              <div className="symbol symbol-40px symbol-circle me-3">
-                                {propuesta.politico.photoURL ? (
-                                  <img
-                                    src={propuesta.politico.photoURL}
-                                    className="img-fluid rounded-circle"
-                                    style={{ width: "40px", height: "40px" }}
-                                    loading="lazy"
-                                    alt=""
-                                  />
-                                ) : (
-                                  <span className="symbol-label bg-light-primary text-primary fs-6 fw-bold">
-                                    {propuesta.politico.nombre?.charAt(0)}
-                                    {propuesta.politico.apellido?.charAt(0)}
-                                  </span>
-                                )}
+            {/* Filtro por categoría */}
+            <div className="col-md-3 mb-3 mb-md-0">
+              <div className="input-group">
+                <span className="input-group-text">
+                  <i className="bi bi-funnel-fill"></i>
+                </span>
+                <select
+                  className="form-select"
+                  value={filterCategoria}
+                  onChange={(e) => setFilterCategoria(e.target.value)}
+                >
+                  <option value="todos">Todas las categorías</option>
+                  {CATEGORIAS.map((categoria) => (
+                    <option key={categoria} value={categoria}>
+                      {categoria}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Ordenamiento */}
+            <div className="col-md-3 mb-3 mb-md-0">
+              <div className="input-group">
+                <span className="input-group-text">
+                  <i className="bi bi-sort-down"></i>
+                </span>
+                <select
+                  className="form-select"
+                  value={sortOption}
+                  onChange={(e) => setSortOption(e.target.value)}
+                >
+                  <option value="votos_desc">Más votadas</option>
+                  <option value="votos_asc">Menos votadas</option>
+                  <option value="fecha_desc">Más recientes</option>
+                  <option value="fecha_asc">Más antiguas</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Filtro según tipo de usuario */}
+            {(() => {
+              try {
+                if (user.tipo === "votante") {
+                  return (
+                    <div className="col-md-3 mb-3 mb-md-0">
+                      <div className="input-group">
+                        <span className="input-group-text">
+                          <i className="bi bi-sort-down"></i>
+                        </span>
+                        <select
+                          className="form-select"
+                          value={myVotes}
+                          onChange={handleMyVotesChange}
+                        >
+                          <option value="todas">Todas</option>
+                          <option value="mis_votadas">Mis Votadas</option>
+                        </select>
+                      </div>
+                    </div>
+                  );
+                }
+                if (user.tipo === "candidato") {
+                  return (
+                    <div className="col-md-3 mb-3 mb-md-0">
+                      <div className="input-group">
+                        <span className="input-group-text">
+                          <i className="bi bi-sort-down"></i>
+                        </span>
+                        <select
+                          className="form-select"
+                          value={myProposals}
+                          onChange={handleMyProposalsChange}
+                        >
+                          <option value="todas">Todas las Propuestas</option>
+                          <option value="mis_propuestas">Mis Propuestas</option>
+                        </select>
+                      </div>
+                    </div>
+                  );
+                }
+              } catch (e) {
+                return null;
+              }
+            })()}
+          </div>
+
+          {/* Tabla de propuestas */}
+          <div className="table-responsive">
+            <table className="table table-hover align-middle">
+              <thead className="table-light">
+                <tr>
+                  <th>Título</th>
+                  <th>Categoría</th>
+                  <th>Político</th>
+                  <th>N Votos</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredPropuestas.length > 0 ? (
+                  filteredPropuestas.map((propuesta) => (
+                    <tr
+                      key={propuesta._id}
+                      onClick={() => handlePropuestaClick(propuesta)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <td>
+                        <div className="fw-bold">
+                          {propuesta.titulo.length > 45
+                            ? propuesta.titulo.slice(0, 45) + "..."
+                            : propuesta.titulo}
+                        </div>
+                      </td>
+                      <td>
+                        <span className="badge bg-info text-dark">
+                          {propuesta.categoria}
+                        </span>
+                      </td>
+                      <td>
+                        {propuesta.politico ? (
+                          <div className="d-flex align-items-center">
+                            <div className="symbol symbol-40px symbol-circle me-3">
+                              {propuesta.politico.photoURL ? (
+                                <img
+                                  src={propuesta.politico.photoURL}
+                                  className="img-fluid rounded-circle"
+                                  style={{ width: "40px", height: "40px" }}
+                                  loading="lazy"
+                                  alt=""
+                                />
+                              ) : (
+                                <span className="symbol-label bg-light-primary text-primary fs-6 fw-bold">
+                                  {propuesta.politico.nombre?.charAt(0)}
+                                  {propuesta.politico.apellido?.charAt(0)}
+                                </span>
+                              )}
+                            </div>
+                            <div>
+                              <div className="fw-bold">
+                                {propuesta.politico.nombre}{" "}
+                                {propuesta.politico.apellido}
                               </div>
-                              <div>
-                                <div className="fw-bold">
-                                  {propuesta.politico.nombre}{" "}
-                                  {propuesta.politico.apellido}
-                                </div>
-                                <div className="text-muted">
-                                  {propuesta.politico.candidatura}
-                                </div>
+                              <div className="text-muted">
+                                {propuesta.politico.candidatura}
                               </div>
                             </div>
-                          ) : (
-                            <span className="text-muted">No disponible</span>
-                          )}
-                        </td>
-                        <td>
-                          {propuesta.votos && propuesta.votos.length > 0 ? (
-                            <span className="badge bg-success text-white">
-                              {propuesta.votos.length} Votos
-                            </span>
-                          ) : (
-                            <span className="badge bg-secondary text-black">
-                              0 Votos
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="5" className="text-center py-4">
-                        <i className="bi bi-emoji-frown display-6 text-muted"></i>
-                        <h5 className="mt-2">No se encontraron propuestas</h5>
-                        <p className="text-muted">
-                          Intenta con otros términos de búsqueda
-                        </p>
+                          </div>
+                        ) : (
+                          <span className="text-muted">No disponible</span>
+                        )}
+                      </td>
+                      <td>
+                        {propuesta.votos?.length > 0 ? (
+                          <span className="badge bg-success text-white">
+                            {propuesta.votos.length} Votos
+                          </span>
+                        ) : (
+                          <span className="badge bg-secondary text-black">
+                            0 Votos
+                          </span>
+                        )}
                       </td>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="5" className="text-center py-4">
+                      <i className="bi bi-emoji-frown display-6 text-muted"></i>
+                      <h5 className="mt-2">No se encontraron propuestas</h5>
+                      <p className="text-muted">
+                        Intenta con otros términos de búsqueda
+                      </p>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
+        </div>
 
-          <div className="card-footer d-flex justify-content-between align-items-center">
-            <div className="text-muted">
-              Mostrando {filteredPropuestas.length} de {propuestas.length}{" "}
-              propuestas
-            </div>
-            <div>
-              <button className="btn btn-sm btn-outline-primary me-2">
-                <i className="bi bi-arrow-left"></i>
-              </button>
-              <button className="btn btn-sm btn-outline-primary">
-                <i className="bi bi-arrow-right"></i>
-              </button>
-            </div>
+        {/* Pie de la tarjeta con navegación */}
+        <div className="card-footer d-flex justify-content-between align-items-center">
+          <div className="text-muted">
+            Mostrando {filteredPropuestas.length} de {propuestas.length} propuestas
+          </div>
+          <div>
+            <button className="btn btn-sm btn-outline-primary me-2">
+              <i className="bi bi-arrow-left"></i>
+            </button>
+            <button className="btn btn-sm btn-outline-primary">
+              <i className="bi bi-arrow-right"></i>
+            </button>
           </div>
         </div>
       </div>
+    </div>
 
       {/* Modal de Detalles */}
       {selectedPropuesta && (

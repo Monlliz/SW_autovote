@@ -2,13 +2,21 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
+/**
+ * Componente HeroSection
+ * Muestra una sección principal con un mensaje destacado, descripción,
+ * botón condicional para ir al dashboard si el usuario está autenticado,
+ * y una imagen con un badge.
+ */
 const HeroSection = () => {
+  // Obtiene el usuario actual del contexto de autenticación
   const { user } = useAuth();
 
   return (
     <div className="container py-5 my-4">
       <div className="row align-items-center g-5">
-        {/* Columna izquierda - Texto */}
+
+        {/* Columna izquierda: texto descriptivo y botón */}
         <div className="col-md-6 order-md-1 order-2">
           <h1 className="display-6 fw-bold mb-3 text-primary">
             La inteligencia artificial que convierte tus ideales en decisiones
@@ -21,6 +29,7 @@ const HeroSection = () => {
             alinean con sus valores e intereses.
           </p>
           <div className="d-flex flex-wrap gap-3 mb-4">
+            {/* Mostrar botón solo si el usuario está autenticado */}
             {user?.uid && (
               <Link
                 className="btn btn-primary px-4 py-2 shadow-sm"
@@ -32,7 +41,7 @@ const HeroSection = () => {
           </div>
         </div>
 
-        {/* Columna derecha - Imagen */}
+        {/* Columna derecha: imagen principal con badge */}
         <div className="col-md-6 order-md-2 order-1">
           <div className="position-relative">
             <img
@@ -52,6 +61,7 @@ const HeroSection = () => {
             </div>
           </div>
         </div>
+
       </div>
     </div>
   );

@@ -1,16 +1,20 @@
 import React, { useState } from "react";
 import InternalNavbar from "../components/InternalNavbar";
-import apiClient from "../api/client";
+import { apiClient } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 
 const CrearPropuesta = ({ onSubmit }) => {
+  // Obtenemos el usuario autenticado desde el contexto de autenticación
   const { user } = useAuth();
+
+  // Estado para almacenar los datos del formulario
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     category: "",
   });
 
+  // Lista de categorías posibles para la propuesta
   const categories = [
     "Economía y Empleo",
     "Educación",
@@ -24,6 +28,7 @@ const CrearPropuesta = ({ onSubmit }) => {
     "Relaciones Exteriores",
   ];
 
+  // Función para actualizar el estado conforme el usuario escribe en los campos
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -32,43 +37,52 @@ const CrearPropuesta = ({ onSubmit }) => {
     }));
   };
 
+  // Función para manejar el envío del formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Validar que el político esté validado antes de permitir crear propuesta
     try {
       const res = await apiClient.get(`politico/${user.uid}`);
       if (!res.data.validacion) {
         alert(
           "El político no está validado. No puede crear propuestas. Espera a que un administrador valide tu cuenta."
         );
-        return;
+        return; // No continuar si no está validado
       }
     } catch (error) {
       console.error("Error al obtener el político:", error);
       return;
     }
 
+    // Validar que todos los campos requeridos estén llenos
     if (formData.title && formData.description && formData.category) {
       try {
+        // Crear objeto propuesta con datos del formulario y el id del político autenticado
         const propuesta = {
-          id_politico: user.uid, // Cambia esto por el ID del político autenticado
+          id_politico: user.uid,
           titulo: formData.title,
           descripcion: formData.description,
           categoria: formData.category,
         };
 
+        // Enviar propuesta al backend vía POST
         const response = await apiClient.post("propuesta", propuesta);
 
         console.log("Respuesta del servidor:", response.data);
 
+        // Confirmar éxito si el backend retorna id de la propuesta
         if (response.data?.id) {
           alert("Propuesta creada con éxito");
+          // Aquí podrías llamar a onSubmit si se quiere informar al padre
+          if (onSubmit) onSubmit();
         }
       } catch (error) {
         console.error("Error al crear la propuesta:", error);
         alert("Error al crear la propuesta. Por favor, inténtelo de nuevo.");
       }
-      // Reset form after submission
+
+      // Limpiar formulario después de enviar
       setFormData({
         title: "",
         description: "",
@@ -81,7 +95,10 @@ const CrearPropuesta = ({ onSubmit }) => {
 
   return (
     <>
+      {/* Navbar interno */}
       <InternalNavbar />
+
+      {/* Contenedor principal con tarjeta */}
       <div className="card shadow-sm border-0 mt-4 mx-4">
         <div className="card-header bg-primary text-white">
           <h4 className="mb-0">
@@ -89,9 +106,11 @@ const CrearPropuesta = ({ onSubmit }) => {
             Crear Nueva Propuesta
           </h4>
         </div>
+
         <div className="card-body">
+          {/* Formulario para crear propuesta */}
           <form onSubmit={handleSubmit}>
-            {/* Campo Título */}
+            {/* Campo para título */}
             <div className="mb-3">
               <label htmlFor="title" className="form-label">
                 Título de la Propuesta <span className="text-danger">*</span>
@@ -111,7 +130,7 @@ const CrearPropuesta = ({ onSubmit }) => {
               </div>
             </div>
 
-            {/* Campo Descripción */}
+            {/* Campo para descripción */}
             <div className="mb-3">
               <label htmlFor="description" className="form-label">
                 Descripción Detallada <span className="text-danger">*</span>
@@ -131,7 +150,7 @@ const CrearPropuesta = ({ onSubmit }) => {
               </div>
             </div>
 
-            {/* Campo Categoría */}
+            {/* Selector de categoría */}
             <div className="mb-4">
               <label htmlFor="category" className="form-label">
                 Categoría <span className="text-danger">*</span>
@@ -156,7 +175,7 @@ const CrearPropuesta = ({ onSubmit }) => {
               </div>
             </div>
 
-            {/* Botones de acción */}
+            {/* Botones: limpiar formulario y enviar */}
             <div className="d-flex justify-content-between">
               <button
                 type="button"
@@ -172,6 +191,7 @@ const CrearPropuesta = ({ onSubmit }) => {
                 <i className="bi bi-x-circle me-2"></i>
                 Limpiar Formulario
               </button>
+
               <button type="submit" className="btn btn-primary">
                 <i className="bi bi-save me-2"></i>
                 Crear Propuesta

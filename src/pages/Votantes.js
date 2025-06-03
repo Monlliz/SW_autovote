@@ -1,39 +1,46 @@
 import React, { useState, useEffect } from "react";
-import "bootstrap/dist/css/bootstrap.min.css";
-import "bootstrap-icons/font/bootstrap-icons.css";
-import InternalNavbar from "../components/InternalNavbar";
-import apiClient from "../api/client"; // Asegúrate de que la ruta sea correcta
+import "bootstrap/dist/css/bootstrap.min.css"; // Importa estilos de Bootstrap
+import "bootstrap-icons/font/bootstrap-icons.css"; // Importa íconos de Bootstrap
+import InternalNavbar from "../components/InternalNavbar"; // Barra de navegación interna
+import { apiClient } from "../api/client"; // Cliente API para hacer solicitudes al backend
 
 const Votantes = () => {
+  // Estado para guardar la lista de candidatos/votantes
   const [candidates, setCandidates] = useState([]);
+  // Estado para controlar si está cargando la información
   const [loading, setLoading] = useState(true);
+  // Estado para guardar cualquier error ocurrido al obtener datos
   const [error, setError] = useState(null);
+  // Estado para controlar el término de búsqueda ingresado por el usuario
   const [searchTerm, setSearchTerm] = useState("");
 
+  // useEffect para cargar los candidatos apenas se monta el componente
   useEffect(() => {
     const fetchCandidates = async () => {
       try {
-        setLoading(true);
-        // Simulación de llamada a API - reemplaza con tu llamada real
-        const response = await apiClient.get("/votante");
-        setCandidates(response.data);
+        setLoading(true); // Activa el indicador de carga
+        const response = await apiClient.get("/votante"); // Petición GET para obtener votantes
+        setCandidates(response.data); // Guarda los datos recibidos
       } catch (err) {
-        setError(err.message);
+        setError(err.message); // Guarda el error si ocurre alguno
       } finally {
-        setLoading(false);
+        setLoading(false); // Desactiva el indicador de carga
       }
     };
 
-    fetchCandidates();
-  }, []);
+    fetchCandidates(); // Ejecuta la función para obtener datos
+  }, []); // Se ejecuta solo una vez al montar el componente
 
-  // Función para eliminar candidato
+  // Función para eliminar un votante dado su ID
   const eliminarCandidato = async (candidate_id) => {
+    // Confirmar acción con el usuario
     if (window.confirm("¿Estás seguro de que deseas eliminar este votante?")) {
       try {
+        // Petición DELETE para eliminar el votante
         const response = await apiClient.delete(`/votante/${candidate_id}`);
         if (response.data.message) {
           alert("Votante eliminado correctamente.");
+          // Actualiza la lista local removiendo el candidato eliminado
           setCandidates((prevCandidates) =>
             prevCandidates.filter((candidate) => candidate._id !== candidate_id)
           );
@@ -44,17 +51,18 @@ const Votantes = () => {
     }
   };
 
-  // Filtrar y ordenar candidatos
+  // Filtra los candidatos según el término de búsqueda en múltiples campos
   const filteredCandidates = candidates.filter((candidate) => {
-    // Búsqueda en múltiples campos (restaurada)
+    // Concatenar campos relevantes en una cadena para búsqueda
     const matchesSearch =
       `${candidate.nombre} ${candidate.apellido} ${candidate.correo} ${candidate.ciudad} ${candidate.colonia} ${candidate.estado} ${candidate.codigo_postal}`
         .toLowerCase()
-        .includes(searchTerm.toLowerCase());
+        .includes(searchTerm.toLowerCase()); // Comparación insensible a mayúsculas
 
     return matchesSearch;
   });
 
+  // Mostrar spinner mientras se cargan los datos
   if (loading)
     return (
       <>
@@ -73,14 +81,17 @@ const Votantes = () => {
       </>
     );
 
+  // Mostrar mensaje de error si ocurrió alguno
   if (error)
     return <div className="alert alert-danger my-5">Error: {error}</div>;
 
+  // Renderizado principal con tabla y controles
   return (
     <>
       <InternalNavbar />
       <div className="container-fluid p-4">
         <div className="card shadow-sm">
+          {/* Header con título y contador */}
           <div className="card-header bg-primary text-white">
             <h3 className="mb-0">
               {candidates.length}
@@ -89,10 +100,11 @@ const Votantes = () => {
             </h3>
           </div>
 
+          {/* Cuerpo de la tarjeta */}
           <div className="card-body">
-            {/* Controles de búsqueda y filtro - ACTUALIZADO */}
+            {/* Campo de búsqueda */}
             <div className="row mb-4">
-              <div className="col-md-412">
+              <div className="col-md-12">
                 <div className="input-group">
                   <span className="input-group-text">
                     <i className="bi bi-search"></i>
@@ -108,7 +120,7 @@ const Votantes = () => {
               </div>
             </div>
 
-            {/* Tabla de resultados */}
+            {/* Tabla responsive para mostrar resultados */}
             <div className="table-responsive">
               <table className="table table-hover align-middle">
                 <thead className="table-light">
@@ -126,6 +138,7 @@ const Votantes = () => {
                         <td>
                           <div className="d-flex align-items-center">
                             <div className="symbol symbol-40px symbol-circle me-3">
+                              {/* Mostrar foto si existe, si no iniciales */}
                               {candidate.photoURL ? (
                                 <img
                                   loading="lazy"
@@ -154,6 +167,7 @@ const Votantes = () => {
                             </div>
                           </div>
                         </td>
+                        {/* Email de contacto */}
                         <td>
                           <a
                             href={`mailto:${candidate.correo}`}
@@ -162,6 +176,7 @@ const Votantes = () => {
                             {candidate.correo}
                           </a>
                         </td>
+                        {/* Ubicación */}
                         <td>
                           <div>{candidate.colonia}</div>
                           <div className="text-muted">
@@ -171,6 +186,7 @@ const Votantes = () => {
                             CP: {candidate.codigo_postal}
                           </div>
                         </td>
+                        {/* Botón para eliminar */}
                         <td>
                           <button
                             className="btn btn-sm btn-outline-danger"
@@ -183,6 +199,7 @@ const Votantes = () => {
                       </tr>
                     ))
                   ) : (
+                    // Mensaje si no hay resultados
                     <tr>
                       <td colSpan="6" className="text-center py-4">
                         <i className="bi bi-emoji-frown display-6 text-muted"></i>
@@ -198,6 +215,7 @@ const Votantes = () => {
             </div>
           </div>
 
+          {/* Footer con contador y botones de paginación (sin funcionalidad aún) */}
           <div className="card-footer d-flex justify-content-between align-items-center">
             <div className="text-muted">
               Mostrando {filteredCandidates.length} de {candidates.length}{" "}

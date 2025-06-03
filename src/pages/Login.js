@@ -1,20 +1,19 @@
-import { useState, useEffect } from "react"; // Importar las funciones useState
-import "../style/Login.css";
-import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom"; // Importar useNavigate para redireccionar
-import axios from "axios";
-import apiClient from "../api/client";
-// FIREBASE
+import { useState, useEffect } from "react"; // Importa los hooks useState y useEffect
+import "../style/Login.css"; // Importa el archivo de estilos CSS para el componente Login
+import { useAuth } from "../context/AuthContext"; // Importa el hook personalizado para autenticación
+import { useNavigate } from "react-router-dom"; // Importa useNavigate para redirección en React Router
+import axios from "axios"; // Cliente HTTP para realizar peticiones a la API
+import {apiClient} from "../api/client"; // Cliente personalizado de la API
 import {
   handleLogout,
   storage,
   ref,
   uploadBytes,
   getDownloadURL,
-} from "../api/firebase.config";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+} from "../api/firebase.config"; // Funciones para manejo de archivos en Firebase Storage
+import { getAuth, onAuthStateChanged } from "firebase/auth"; // Firebase Auth para verificar el estado del usuario
 
-// FUNCION PARA SEPARAR NOMBRE Y APELLIDO
+// Función para separar el nombre y apellido del usuario
 function obtenerNombreApellido(displayName) {
   const partes = displayName.trim().split(" ");
   if (partes.length < 2) {
@@ -32,15 +31,17 @@ function obtenerNombreApellido(displayName) {
 }
 
 const Login = () => {
-  // --- FIREBASE FILES
+  // Estado para almacenar el archivo cargado
   const [file, setFile] = useState(null);
 
+  // Maneja el cambio de archivo (cuando se selecciona uno nuevo)
   const handleFileChange = (e) => {
     if (e.target.files[0]) {
       setFile(e.target.files[0]);
     }
   };
 
+  // Sube el archivo a Firebase Storage y guarda la URL en formData
   const handleUpload = async () => {
     if (!file) {
       console.log("Por favor selecciona un archivo");
@@ -48,25 +49,20 @@ const Login = () => {
     }
 
     try {
-      // 1. Crear referencia con nombre único
-      const fileName = `files/${Date.now()}_${file.name}`;
-      const storageRef = ref(storage, fileName);
-
-      // 2. Subir el archivo
-      const snapshot = await uploadBytes(storageRef, file);
-
-      // 3. Obtener URL (usando la referencia del snapshot)
-      const url = await getDownloadURL(snapshot.ref);
-      formData.cedula_politica = url;
+      const fileName = `files/${Date.now()}_${file.name}`; // Nombre único para el archivo
+      const storageRef = ref(storage, fileName); // Referencia al almacenamiento en Firebase
+      const snapshot = await uploadBytes(storageRef, file); // Subir archivo
+      const url = await getDownloadURL(snapshot.ref); // Obtener URL del archivo subido
+      formData.cedula_politica = url; // Asignar la URL al campo correspondiente
     } catch (err) {
       console.error("Error completo:", err);
     }
   };
-  // --- FIREBASE FILES
 
-  const [userg, setUserg] = useState(null);
-  const navigate = useNavigate(); // Inicializar el hook useNavigate
-  // Estado para almacenar los datos del formulario
+  const [userg, setUserg] = useState(null); // Estado para almacenar el usuario logueado
+  const navigate = useNavigate(); // Hook para redirigir
+
+  // Estado del formulario
   const [formData, setFormData] = useState({
     user: "Votante",
     nombre: "",
@@ -81,33 +77,24 @@ const Login = () => {
     cedula_politica: "",
   });
 
-  // --- OBTENER USUARIO LOGUEADO DE FIREBASE
+  // Obtiene el usuario logueado de Firebase
   useEffect(() => {
     const auth = getAuth();
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (!currentUser) {
-        navigate("/"); // Redirigir a la página de inicio si no hay usuario
+        navigate("/"); // Redirige si no hay usuario
       }
       setUserg(currentUser);
     });
 
     return () => {
-      unsubscribe();
+      unsubscribe(); // Cancela la suscripción al desmontar
     };
-  }, [navigate, userg]); // Dependencias: navigate y userg
-  // --- OBTENER USUARIO LOGUEADO DE FIREBASE
+  }, [navigate, userg]);
 
-  // --- VALIDAR QUE EL USUARIO ESTÉ LOGUEADO
-  const { login } = useAuth();
-  /* useEffect(() => {
-    // Solo redirige cuando la carga ha terminado Y no hay usuario
-    if (!isLoading && user) {
-      navigate("/dashboard"); // Redirigir a la página de inicio si el usuario no está autenticado
-    }
-  }, [isLoading, user, navigate]); // Dependencias: isLoading y user */
-  // --- VALIDAR QUE EL USUARIO ESTÉ LOGUEADO
+  const { login } = useAuth(); // Hook de contexto de autenticación
 
-  // --- SETEAR NOMBRE Y APELLIDO DEL USUARIO LOGUEADO
+  // Establece nombre, apellido y correo en el formulario a partir del usuario
   useEffect(() => {
     if (userg !== null) {
       const resultado = obtenerNombreApellido(userg.displayName);
@@ -119,12 +106,12 @@ const Login = () => {
       }));
     }
   }, [userg]);
-  // --- SETEAR NOMBRE Y APELLIDO DEL USUARIO LOGUEADO
 
-  // --- MANEJAR LOS CAMBIOS EN EL FORMULARIO
+  // Maneja cambios en los inputs del formulario
   const handleChange = (e) => {
-    const { name, value } = e.target; // Desestructurar el evento para obtener el nombre y valor del campo
+    const { name, value } = e.target;
 
+    // Si cambia a "Candidato", limpiar campos específicos
     if (name === "user" && value === "Candidato") {
       setFormData({
         ...formData,
@@ -134,25 +121,19 @@ const Login = () => {
     }
 
     setFormData({
-      ...formData, // Copiamos todos los valores anteriores
-      [name]: value, // Actualizamos solo el campo que cambió
+      ...formData,
+      [name]: value,
     });
   };
-  // --- MANEJAR LOS CAMBIOS EN EL FORMULARIO
 
-  // -- FUNCION PARA VERIFICAR EL TIPO DE USUARIO (Mostrar opciones para candidato)
+  // Determina si el tipo de usuario es votante
   const tipoUsuario = (usuario) => {
-    if (usuario === "Votante") {
-      return true;
-    } else if (usuario === "Candidato") {
-      return false;
-    } else {
-      return true;
-    }
+    if (usuario === "Votante") return true;
+    if (usuario === "Candidato") return false;
+    return true;
   };
-  // -- FUNCION PARA VERIFICAR EL TIPO DE USUARIO (Mostrar opciones para candidato)
 
-  // -- ENVIO DE DATOS | REGISTRO
+  // Maneja el envío del formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -167,10 +148,7 @@ const Login = () => {
         estado: formData.estado,
         photoURL: userg.photoURL,
         ...(formData.user === "Votante"
-          ? {
-              preferencias: [],
-              propuestas_votadas: [],
-            }
+          ? { preferencias: [], propuestas_votadas: [] }
           : {
               candidatura: formData.candidatura,
               cedula_politica: formData.cedula_politica,
@@ -182,18 +160,16 @@ const Login = () => {
 
       if (formData.user === "Candidato") {
         try {
-          await handleUpload(); // Llamar a la función de carga de archivos
-          requestData.cedula_politica = formData.cedula_politica; // Asignar la URL del archivo al objeto de datos
-          response = await apiClient.post("politico", requestData);
-
-          // formData.cedula_politica = response.data.cedula_politica;
+          await handleUpload(); // Sube el archivo si es candidato
+          requestData.cedula_politica = formData.cedula_politica;
+          response = await apiClient.post("politico", requestData); // Registra candidato
         } catch (error) {
           console.error("Error al crear politico: ", error);
           return;
         }
-      } else if (formData.user === "Votante") {
+      } else {
         try {
-          response = await apiClient.post("votante", requestData);
+          response = await apiClient.post("votante", requestData); // Registra votante
         } catch (error) {
           console.error("Error al crear votante: ", error);
           return;
@@ -215,35 +191,32 @@ const Login = () => {
           tipo: formData.user.toLowerCase(),
         };
 
-        await login(userk);
+        await login(userk); // Guarda la sesión del usuario
 
         const redirectPath =
           formData.user === "Candidato" ? "/crearpropuesta" : "/preferencias";
         console.log(`${formData.user} creado correctamente`);
-        navigate(redirectPath);
+        navigate(redirectPath); // Redirige según el tipo de usuario
       }
-
-      // setFormData(initialFormState); // Resetear formulario
     } catch (error) {
       console.error("Error completo:", error);
       alert("Error en el registro: " + error.message);
     }
   };
-  // -- ENVIO DE DATOS | REGISTRO
 
-  // --- FUNCION PARA CERRAR SESION
+  // Cierra la sesión del usuario
   const handleLogoutClick = async () => {
-    await handleLogout(); // Llamamos a la función de cierre de sesión de Firebase
-    navigate("/"); // Redirigir a la página principal después de cerrar sesión
+    await handleLogout();
+    navigate("/");
   };
-  // --- FUNCION PARA CERRAR SESION
 
-  // --- PARA CODIGO POSTAL
+  // Estados para búsqueda de dirección por código postal
   const [postalCode, setPostalCode] = useState("");
   const [addressData, setAddressData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Busca información del código postal ingresado
   const handlePostalCodeChange = async (e) => {
     const cp = e.target.value.replace(/\D/g, "");
     setPostalCode(cp);
@@ -256,14 +229,10 @@ const Login = () => {
           `https://api.copomex.com/query/info_cp/${cp}?token=71732f81-82f5-423b-b002-0ed598deb0db`
         );
 
-        // Verificación segura de la respuesta
         const data = response.data;
 
-        if (!data) {
-          throw new Error("No se recibieron datos");
-        }
+        if (!data) throw new Error("No se recibieron datos");
 
-        // Maneja diferentes estructuras de respuesta
         const addresses = data.error
           ? []
           : data.response
@@ -289,6 +258,7 @@ const Login = () => {
     }
   };
 
+  // Selecciona una dirección obtenida desde el código postal
   const handleAddressSelect = (address) => {
     setFormData({
       ...formData,

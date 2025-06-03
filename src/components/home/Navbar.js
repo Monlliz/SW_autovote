@@ -1,125 +1,48 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { signInWithGoogle, handleLogout } from "../../api/firebase.config"; // Asegúrate de importar las funciones de autenticación
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import apiClient from "../../api/client";
+import LoginModal from "./LoginModal";
 
 const Navbar = () => {
-  const { login } = useAuth();
+  // Obtiene el usuario actual y la función logout desde el contexto de autenticación
+  const { user, logout } = useAuth();
+
+  // Hook para navegación programática
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
 
-  const [user, setUser] = useState(null);
+  // Estado para controlar la visibilidad del modal de login
+  const [modalOpen, setModalOpen] = useState(false);
 
-  // Comprobar el estado de autenticación cuando el componente se monta
+  // Efecto para suscribirse a cambios en el estado de autenticación de Firebase
   useEffect(() => {
     const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser); // Si hay un usuario autenticado, actualizamos el estado
-      } else {
-        setUser(null); // Si no hay usuario, limpiamos el estado
-      }
-    });
-    return () => unsubscribe(); // Limpiamos el listener cuando el componente se desmonte
+
+    // Se suscribe a cambios en el estado de autenticación, sin hacer nada cuando cambia
+    const unsubscribe = onAuthStateChanged(auth, () => {});
+
+    // Limpia la suscripción cuando el componente se desmonta
+    return () => unsubscribe();
   }, []);
 
-  // Función para manejar el inicio de sesión
-  const handleLogin = async () => {
-    try {
-      const loggedInUser = await signInWithGoogle();
-      setLoading(true); // Empieza la carga
-
-      if (loggedInUser) {
-        setUser(loggedInUser);
-
-        const userk = await searchUserByEmail(
-          loggedInUser.email,
-          loggedInUser.photoURL
-        );
-
-        setLoading(false); // Oculta la carga ANTES de navegar
-
-        if (userk) {
-          login(userk);
-          navigate("/dashboard");
-        } else {
-          navigate("/login");
-        }
-      } else {
-        setLoading(false);
-      }
-    } catch (error) {
-      setLoading(false);
-      console.error(error);
-    }
-  };
-
-  async function searchUserByEmail(email, photoURL) {
-    try {
-      let tipo = "votante";
-
-      let response = await apiClient.get(
-        `votante/correo/${encodeURIComponent(email)}`
-      );
-
-      if (response.data.error) {
-        response = await apiClient.get(
-          `politico/correo/${encodeURIComponent(email)}`
-        );
-        tipo = "candidato";
-      }
-
-      if (response.data.error) {
-        response = await apiClient.get(
-          `administrador/correo/${encodeURIComponent(email)}`
-        );
-        tipo = "administrador";
-      }
-
-      if (response?.data?.correo) {
-        const userk = {
-          uid: response.data._id,
-          photoURL,
-          nombre: response.data.nombre,
-          apellido: response.data.apellido,
-          correo: response.data.correo,
-          tipo,
-          edad: response.data.edad,
-          codigo_postal: response.data.codigo_postal,
-          colonia: response.data.colonia,
-          ciudad: response.data.ciudad,
-          estado: response.data.estado,
-        };
-
-        login(userk);
-
-        return userk;
-      } else {
-        return null;
-      }
-    } catch (error) {
-      console.error("Error completo:", error);
-    }
-  }
-
-  // --- FUNCION PARA CERRAR SESION
+  // Función para cerrar sesión
   const handleLogoutClick = async () => {
-    await handleLogout(); // Llamamos a la función de cierre de sesión de Firebase
-    navigate("/"); // Redirigir a la página principal después de cerrar sesión
+    await logout();     // Llama a la función logout del contexto
+    navigate("/");      // Redirige al usuario a la página principal
   };
-  // --- FUNCION PARA CERRAR SESION
 
   return (
     <>
+      {/* Barra de navegación principal */}
       <nav className="navbar navbar-expand-lg navbar-dark bg-black py-3">
         <div className="container">
+          {/* Logo y nombre de la aplicación con link a la página principal */}
           <Link className="navbar-brand d-flex align-items-center" to="/">
             <i className="bi bi-check2-circle me-2"></i>
             <span className="fw-bold">AutoVote</span>
           </Link>
 
+          {/* Botón para colapsar la barra en pantallas pequeñas */}
           <button
             className="navbar-toggler border-0"
             type="button"
@@ -132,26 +55,24 @@ const Navbar = () => {
             <span className="navbar-toggler-icon"></span>
           </button>
 
+          {/* Menú colapsable */}
           <div className="collapse navbar-collapse" id="navbarNav">
             <ul className="navbar-nav ms-auto">
               <li className="nav-item">
+                {/* Si no hay usuario logueado, muestra botón para abrir modal de login */}
                 {!user ? (
                   <button
-                    onClick={handleLogin}
+                    onClick={() => setModalOpen(true)}
                     className="btn btn-sm btn-light d-flex align-items-center gap-2 px-3"
                   >
-                    <img
-                      src="https://developers.google.com/identity/images/g-logo.png"
-                      alt="Google"
-                      style={{ width: "16px", height: "16px" }}
-                    />
+                    <i className="bi bi-box-arrow-in-right"></i>
                     <span className="d-none d-sm-inline">Iniciar sesión</span>
                   </button>
                 ) : (
+                  // Si hay usuario logueado, muestra su nombre/correo y botón para cerrar sesión
                   <div className="d-flex align-items-center gap-2">
                     <span className="text-light me-2 d-none d-lg-inline small">
-                      <i className="bi bi-person-circle me-1"></i>
-                      {user.displayName || user.email}
+                      {user?.nombre || user?.correo}
                     </span>
                     <button
                       className="btn btn-sm btn-outline-light px-3"
@@ -167,19 +88,9 @@ const Navbar = () => {
           </div>
         </div>
       </nav>
-      {loading && (
-        <div className="container mt-5 text-center">
-          <div
-            className="spinner-border text-primary"
-            style={{ width: "2rem", height: "2rem" }}
-            role="status"
-          >
-            <span className="visually-hidden">Cargando...</span>
-          </div>
-          <h4 className="mt-3">Iniciando sesión...</h4>
-          <p>Esto puede tomar unos momentos</p>
-        </div>
-      )}
+
+      {/* Componente modal para iniciar sesión, controlado por el estado modalOpen */}
+      <LoginModal show={modalOpen} onClose={() => setModalOpen(false)} />
     </>
   );
 };

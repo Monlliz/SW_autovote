@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import InternalNavbar from "../components/InternalNavbar";
-import apiClient from "../api/client"; // Asegúrate de que la ruta sea correcta
+import {apiClient} from "../api/client";  // Asegúrate de que la ruta sea correcta
 
 const Validacion = () => {
   const [candidates, setCandidates] = useState([]);
