@@ -1,70 +1,80 @@
-# Getting Started with Create React App
+# 🗳️ Autovote — Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Interfaz web de **Autovote**, una plataforma que ayuda a los ciudadanos a tomar decisiones electorales informadas: responde un cuestionario de preferencias, compara automáticamente tus posturas con las propuestas reales de los candidatos y visualiza los resultados.
 
-## Available Scripts
+🔗 **Backend / API:** [SW_autovote_back](https://github.com/Monlliz/SW_autovote_back)
 
-In the project directory, you can run:
+## ✨ Funcionalidades
 
-### `npm start`
+- Cuestionario interactivo de preferencias ideológicas (10 categorías)
+- Comparación automática entre el perfil del votante y las propuestas de los políticos
+- Paneles y gráficas de estadísticas con **Recharts**
+- Gestión de sesión y notificaciones (toasts, modales)
+- Diseño responsive con componentes de **Ant Design** y **React-Bootstrap**
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## 🛠️ Stack técnico
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+| Categoría | Tecnología |
+|---|---|
+| Librería UI | React 19 |
+| Componentes | Ant Design, React-Bootstrap, Bootswatch |
+| Enrutamiento | React Router DOM |
+| Peticiones HTTP | Axios |
+| Backend as a Service | Firebase |
+| Gráficas | Recharts |
+| Notificaciones / UI extra | React Toastify, React Modal, React Icons |
+| Build tool | Create React App |
+| Despliegue | Vercel |
 
-### `npm test`
+## 🚀 Cómo correrlo localmente
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 1. Clonar el repositorio
 
-### `npm run build`
+```bash
+git clone https://github.com/Monlliz/SW_autovote.git
+cd SW_autovote
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### 2. Instalar dependencias
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```bash
+npm install
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 3. Variables de entorno
 
-### `npm run eject`
+Crea un archivo `.env` en la raíz con la URL del backend y tus credenciales de Firebase, por ejemplo:
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+```
+REACT_APP_API_URL=http://127.0.0.1:5000
+REACT_APP_FIREBASE_API_KEY=tu_api_key
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### 4. Levantar en modo desarrollo
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+```bash
+npm start
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Se abrirá en <http://localhost:3000>
 
-## Learn More
+### Otros scripts disponibles
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+| Comando | Descripción |
+|---|---|
+| `npm start` | Corre la app en modo desarrollo |
+| `npm test` | Corre las pruebas en modo interactivo |
+| `npm run build` | Genera el build de producción en `/build` |
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## 🔗 Proyecto relacionado
 
-### Code Splitting
+Este frontend consume la API de [`SW_autovote_back`](https://github.com/Monlliz/SW_autovote_back) (Flask + MongoDB), donde vive toda la lógica de negocio, autenticación y valoración de propuestas con IA.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## 🎬 Demo
 
-### Analyzing the Bundle Size
+[Ver video de demostración](https://drive.google.com/file/d/1Kp-um5qzvAoLxq6xPny1_KGjSqg-aI2E/view?usp=sharing)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## 👩‍💻 Autora
 
-### Making a Progressive Web App
+Desarrollado por [Monlliz](https://github.com/Monlliz) como parte de un proyecto académico de sistemas web.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
