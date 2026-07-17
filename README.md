@@ -1,5 +1,10 @@
 # 🗳️ Autovote — Frontend
 
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![Ant Design](https://img.shields.io/badge/UI-Ant%20Design-1677FF?logo=antdesign&logoColor=white)
+![Bootstrap](https://img.shields.io/badge/UI-Bootstrap%205-7952B3?logo=bootstrap&logoColor=white)
+![Firebase](https://img.shields.io/badge/Firebase-Integrado-FFCA28?logo=firebase&logoColor=black)
+
 Interfaz web de **Autovote**, una plataforma que ayuda a los ciudadanos a tomar decisiones electorales informadas: responde un cuestionario de preferencias, compara automáticamente tus posturas con las propuestas reales de los candidatos y visualiza los resultados.
 
 🔗 **Backend / API:** [SW_autovote_back](https://github.com/Monlliz/SW_autovote_back)
